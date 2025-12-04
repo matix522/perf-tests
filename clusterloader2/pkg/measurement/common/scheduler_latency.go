@@ -103,6 +103,7 @@ func (s *schedulerLatencyMeasurement) Execute(config *measurement.Config) ([]mea
 			masterRegistered = true
 		}
 	}
+	klog.Warningf("provider name: %s, SchedulerInsecurePortDisabled: %v, masterRegistered: %v, SSHToMasterSupported: %v", provider.Name(), provider.Features().SchedulerInsecurePortDisabled, masterRegistered, SSHToMasterSupported)
 
 	if provider.Features().SchedulerInsecurePortDisabled || (!SSHToMasterSupported && !masterRegistered) {
 		klog.Warningf("unable to fetch scheduler metrics for provider: %s", provider.Name())

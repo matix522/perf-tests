@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/fake"
 )
 
 func TestLegacyIsMasterNode(t *testing.T) {
@@ -82,5 +83,32 @@ func TestIsControlPlaneNode(t *testing.T) {
 		}
 		result := IsControlPlaneNode(node)
 		assert.Equal(t, tc.expect, result)
+	}
+}
+
+func TestLogClusterNodes(t *testing.T) {
+	// Create a fake clientset
+	node := &corev1.Node{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-node",
+		},
+		Status: corev1.NodeStatus{
+			Addresses: []corev1.NodeAddress{
+				{Type: corev1.NodeInternalIP, Address: "10.0.0.1"},
+				{Type: corev1.NodeExternalIP, Address: "1.2.3.4"},
+				{Type: corev1.NodeInternalDNS, Address: "internal.dns"},
+				{Type: corev1.NodeExternalDNS, Address: "external.dns"},
+			},
+			Conditions: []corev1.NodeCondition{
+				{Type: corev1.NodeReady, Status: corev1.ConditionTrue},
+			},
+		},
+	}
+	clientset := fake.NewSimpleClientset(node)
+
+	// Call the function
+	err := LogClusterNodes(clientset)
+	if err != nil {
+		t.Fatalf("LogClusterNodes failed: %v", err)
 	}
 }

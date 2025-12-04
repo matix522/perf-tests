@@ -1,36 +1,54 @@
 {{$PROMETHEUS_SCRAPE_NODE_EXPORTER := DefaultParam .PROMETHEUS_SCRAPE_NODE_EXPORTER false}}
 {{$PROMETHEUS_SCRAPE_APISERVER_ONLY := DefaultParam .PROMETHEUS_SCRAPE_APISERVER_ONLY false}}
 {{$PROMETHEUS_APISERVER_SCRAPE_PORT := DefaultParam .PROMETHEUS_APISERVER_SCRAPE_PORT 443}}
-
-# Endpoints object for the kubelet running on master node.
-apiVersion: v1
-kind: Endpoints
+{{$PROMETHEUS_MASTER_DNS_ENDPOINT := DefaultParam .PROMETHEUS_MASTER_DNS_ENDPOINT ""}}
+# EndpointSlice object for the kubelet running on master node.
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
 metadata:
   namespace: monitoring
   name: master
   labels:
     k8s-app: master
-subsets:
+    kubernetes.io/service-name: master
+{{if ne $PROMETHEUS_MASTER_DNS_ENDPOINT ""}}
+addressType: FQDN
+{{else}}
+addressType: IPv4
+{{end}}
+endpoints:
+{{if ne $PROMETHEUS_MASTER_DNS_ENDPOINT ""}}
   - addresses:
-    {{range .MasterIps}}
-      - ip: {{.}}
-    {{end}}
-    ports:
-      - name: apiserver
-        port: {{$PROMETHEUS_APISERVER_SCRAPE_PORT}}
-      {{if not $PROMETHEUS_SCRAPE_APISERVER_ONLY}}
-      - name: etcd-2379
-        port: 2379
-      - name: etcd-2382
-        port: 2382
-      - name: kubelet
-        port: 10250
-      - name: kube-scheduler
-        port: 10259
-      - name: kube-controller-manager
-        port: 10257
-      {{end}}
-      {{if $PROMETHEUS_SCRAPE_NODE_EXPORTER}}
-      - name: node-exporter
-        port: 9100
-      {{end}}
+      - {{$PROMETHEUS_MASTER_DNS_ENDPOINT}}
+{{else}}
+  {{range .MasterIps}}
+  - addresses:
+      - {{.}}
+  {{end}}
+{{end}}
+ports:
+  - name: apiserver
+    port: {{$PROMETHEUS_APISERVER_SCRAPE_PORT}}
+    protocol: TCP
+  {{if not $PROMETHEUS_SCRAPE_APISERVER_ONLY}}
+  - name: etcd-2379
+    port: 2379
+    protocol: TCP
+  - name: etcd-2382
+    port: 2382
+    protocol: TCP
+  - name: kubelet
+    port: 10250
+    protocol: TCP
+  - name: kube-scheduler
+    port: 10259
+    protocol: TCP
+  - name: kube-controller-manager
+    port: 10257
+    protocol: TCP
+  {{end}}
+  {{if $PROMETHEUS_SCRAPE_NODE_EXPORTER}}
+  - name: node-exporter
+    port: 9100
+    protocol: TCP
+  {{end}}

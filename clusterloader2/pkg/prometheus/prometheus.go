@@ -200,6 +200,9 @@ func NewController(clusterLoaderConfig *config.ClusterLoaderConfig) (pc *Control
 	} else {
 		clusterLoaderConfig.PrometheusConfig.ScrapeNetworkPolicies = mapping["PROMETHEUS_SCRAPE_KUBE_NETWORK_POLICIES"].(bool)
 	}
+	if _, exists := mapping["PROMETHEUS_MASTER_DNS_ENDPOINT"]; !exists {
+		mapping["PROMETHEUS_MASTER_DNS_ENDPOINT"] = clusterLoaderConfig.ClusterConfig.MasterDNSEndpoint
+	}
 	mapping["PROMETHEUS_SCRAPE_NODE_LOCAL_DNS"] = clusterLoaderConfig.PrometheusConfig.ScrapeNodeLocalDNS
 	mapping["PROMETHEUS_SCRAPE_KUBE_STATE_METRICS"] = clusterLoaderConfig.PrometheusConfig.ScrapeKubeStateMetrics
 	mapping["PROMETHEUS_SCRAPE_METRICS_SERVER_METRICS"] = clusterLoaderConfig.PrometheusConfig.ScrapeMetricsServerMetrics

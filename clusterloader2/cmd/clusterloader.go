@@ -91,6 +91,7 @@ func initClusterFlags() {
 	// TODO(#595): Change the name of the MASTER_IP and MASTER_INTERNAL_IP flags and vars to plural
 	flags.StringSliceEnvVar(&clusterLoaderConfig.ClusterConfig.MasterIPs, "masterip", "MASTER_IP", nil /*defaultValue*/, "Hostname/IP of the master node, supports multiple values when separated by commas")
 	flags.StringSliceEnvVar(&clusterLoaderConfig.ClusterConfig.MasterInternalIPs, "master-internal-ip", "MASTER_INTERNAL_IP", nil /*defaultValue*/, "Cluster internal/private IP of the master vm, supports multiple values when separated by commas")
+	flags.StringEnvVar(&clusterLoaderConfig.ClusterConfig.MasterDNSEndpoint, "master-endpoint", "MASTER_ENDPOINT", "", "Endpoint of the master node, exclusive with --masterip and --master-internal-ips")
 	flags.BoolEnvVar(&clusterLoaderConfig.ClusterConfig.APIServerPprofByClientEnabled, "apiserver-pprof-by-client-enabled", "APISERVER_PPROF_BY_CLIENT_ENABLED", true, "Whether apiserver pprof endpoint can be accessed by Kubernetes client.")
 	flags.BoolVar(&clusterLoaderConfig.ClusterConfig.SkipClusterVerification, "skip-cluster-verification", false, "Whether to skip the cluster verification, which expects at least one schedulable node in the cluster")
 
@@ -120,6 +121,12 @@ func validateClusterFlags() *errors.ErrorList {
 			errList.Append(fmt.Errorf("cannot enable prometheus server for provider %s", clusterLoaderConfig.ClusterConfig.Provider.Name()))
 		}
 	}
+	// if clusterLoaderConfig.ClusterConfig.MasterDNSEndpoint != "" {
+	// 	if clusterLoaderConfig.ClusterConfig.MasterIPs != nil || clusterLoaderConfig.ClusterConfig.MasterInternalIPs != nil {
+	// 		errList.Append(fmt.Errorf("cannot provide --master-endpoint with --masterip or --master-internal-ip"))
+	// 	}
+	// }
+
 	return errList
 }
 

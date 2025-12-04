@@ -1,7 +1,8 @@
 {{$PROMETHEUS_SCRAPE_NODE_EXPORTER := DefaultParam .PROMETHEUS_SCRAPE_NODE_EXPORTER false}}
 {{$PROMETHEUS_SCRAPE_APISERVER_ONLY := DefaultParam .PROMETHEUS_SCRAPE_APISERVER_ONLY false}}
 {{$PROMETHEUS_APISERVER_SCRAPE_PORT := DefaultParam .PROMETHEUS_APISERVER_SCRAPE_PORT 443}}
-
+{{$PROMETHEUS_MASTER_DNS_ENDPOINT := DefaultParam .PROMETHEUS_MASTER_DNS_ENDPOINT ""}}
+{{if eq $PROMETHEUS_MASTER_DNS_ENDPOINT ""}}
 # Endpoints object for the kubelet running on master node.
 apiVersion: v1
 kind: Endpoints
@@ -34,3 +35,4 @@ subsets:
       - name: node-exporter
         port: 9100
       {{end}}
+{{end}}

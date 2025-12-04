@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"os"
 	"time"
 
 	utilnet "k8s.io/apimachinery/pkg/util/net"
@@ -27,6 +28,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/transport"
+	"k8s.io/klog/v2"
 )
 
 const (
@@ -62,6 +64,12 @@ func GetConfig(path string) (config *restclient.Config, err error) {
 }
 
 func restclientConfig(path string) (*clientcmdapi.Config, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("os.ReadFile(%s): %v", path, err)
+	}
+	klog.Infof("kube config: %s", string(data))
+
 	c, err := clientcmd.LoadFromFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("error loading kubeconfig: %v", err)

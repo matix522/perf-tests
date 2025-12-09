@@ -99,6 +99,7 @@ func (s *schedulerLatencyMeasurement) Execute(config *measurement.Config) ([]mea
 
 	var masterRegistered = false
 	for _, node := range nodes.Items {
+		klog.Warningf("Node %v : %v", node.GetName(), node)
 		if util.LegacyIsMasterNode(&node) || util.IsControlPlaneNode(&node) {
 			masterRegistered = true
 		}

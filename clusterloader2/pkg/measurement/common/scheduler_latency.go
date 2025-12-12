@@ -104,10 +104,10 @@ func (s *schedulerLatencyMeasurement) Execute(config *measurement.Config) ([]mea
 		}
 	}
 
-	if provider.Features().SchedulerInsecurePortDisabled || (!SSHToMasterSupported && !masterRegistered) {
-		klog.Warningf("unable to fetch scheduler metrics for provider: %s", provider.Name())
-		return nil, nil
-	}
+	// if provider.Features().SchedulerInsecurePortDisabled || (!SSHToMasterSupported && !masterRegistered) {
+	// 	klog.Warningf("unable to fetch scheduler metrics for provider: %s", provider.Name())
+	// 	return nil, nil
+	// }
 
 	action, err := util.GetString(config.Params, "action")
 	if err != nil {

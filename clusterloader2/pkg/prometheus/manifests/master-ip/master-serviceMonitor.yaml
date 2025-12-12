@@ -34,7 +34,8 @@ spec:
     interval: 30s
     scrapeTimeout: 30s
   {{else}}
-    interval: 5s
+    interval: 15s
+    scrapeTimeout: 15s
   {{end}}
     bearerTokenSecret:
       name: prometheus-token

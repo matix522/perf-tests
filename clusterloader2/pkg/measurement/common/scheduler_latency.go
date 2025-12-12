@@ -89,7 +89,7 @@ type schedulerLatencyMetrics struct {
 // - gather - Gathers and prints current scheduler latency data.
 func (s *schedulerLatencyMeasurement) Execute(config *measurement.Config) ([]measurement.Summary, error) {
 	provider := config.ClusterFramework.GetClusterConfig().Provider
-	SSHToMasterSupported := provider.Features().SupportSSHToMaster
+	// SSHToMasterSupported := provider.Features().SupportSSHToMaster
 
 	c := config.ClusterFramework.GetClientSets().GetClient()
 	nodes, err := c.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
@@ -104,10 +104,10 @@ func (s *schedulerLatencyMeasurement) Execute(config *measurement.Config) ([]mea
 		}
 	}
 
-	if provider.Features().SchedulerInsecurePortDisabled || (!SSHToMasterSupported && !masterRegistered) {
-		klog.Warningf("unable to fetch scheduler metrics for provider: %s", provider.Name())
-		return nil, nil
-	}
+	// if provider.Features().SchedulerInsecurePortDisabled || (!SSHToMasterSupported && !masterRegistered) {
+	// 	klog.Warningf("unable to fetch scheduler metrics for provider: %s", provider.Name())
+	// 	return nil, nil
+	// }
 
 	action, err := util.GetString(config.Params, "action")
 	if err != nil {

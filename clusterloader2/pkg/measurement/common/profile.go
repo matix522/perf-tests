@@ -67,6 +67,9 @@ func (p *profileMeasurement) populateProfileConfig(config *measurement.Config) e
 	}
 	p.config.provider = config.ClusterFramework.GetClusterConfig().Provider
 	p.config.hosts = config.ClusterFramework.GetClusterConfig().MasterIPs
+	if masterDnsEnpoint := config.ClusterFramework.GetClusterConfig().MasterDNSEndpoint; masterDnsEnpoint != "" {
+		p.config.hosts = append(p.config.hosts, masterDnsEnpoint)
+	}
 	return nil
 }
 
@@ -144,7 +147,7 @@ func (p *profileMeasurement) Execute(config *measurement.Config) ([]measurement.
 	SSHToMasterSupported := provider.Features().SupportSSHToMaster
 	APIServerPprofEnabled := config.ClusterFramework.GetClusterConfig().APIServerPprofByClientEnabled
 
-	if !SSHToMasterSupported && APIServerPprofEnabled {
+	if !SSHToMasterSupported && !APIServerPprofEnabled {
 		klog.Warningf("fetching profile data from is not possible from provider: %s", provider.Name())
 		return nil, nil
 	}

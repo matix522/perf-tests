@@ -92,24 +92,36 @@ fi
 kubectl --kubeconfig "${KUBECONFIG}" config view
 
 # Create a kubeconfig to use the above service account.
-# Capture token from the existing authenticated kubeconfig context
+kubeconfig=$(mktemp)
+server=$(kubectl --kubeconfig "${KUBECONFIG}" config view -o jsonpath='{.clusters[0].cluster.server}')
+ca=$(kubectl --kubeconfig "${KUBECONFIG}" get configmap kube-root-ca.crt -o jsonpath='{.data.ca\.crt}' | base64 -w 0)
 token=$(kubectl --kubeconfig "${KUBECONFIG}" --duration=8760h create token cluster-loader)
-
-# Create a new temp kubeconfig
-export KUBECONFIG=$(mktemp)
-
-# Use gcloud to fetch the Cluster info (Endpoint + CA)
-# This handles the "Trusted CA" logic automatically.
-echo "Fetching cluster credentials using gcloud for cluster: ${CLUSTER_NAME} in project: ${PROJECT} zone: ${ZONE}..."
-gcloud container clusters get-credentials "${CLUSTER_NAME}" --zone "${ZONE}" --project "${PROJECT}"
-
-# Configure kubectl to use the Service Account token instead of the gcloud user
-echo "Configuring kubectl to use cluster-loader service account token..."
-kubectl config set-credentials cluster-loader --token="${token}"
-kubectl config set-context --current --user=cluster-loader
-
-echo "Generated Kubeconfig:"
-kubectl config view
+ca_data=""
+echo "Master endpoint $MASTER_ENDPOINT"
+if [[ "${MASTER_ENDPOINT:-}" == "" ]]; then
+  ca_data="    certificate-authority-data: ${ca}"
+fi
+echo "
+apiVersion: v1
+kind: Config
+clusters:
+- name: default-cluster
+  cluster:
+${ca_data}
+    server: ${server}
+contexts:
+- name: default-context
+  context:
+    cluster: default-cluster
+    namespace: default
+    user: default-user
+current-context: default-context
+users:
+- name: default-user
+  user:
+    token: ${token}
+" > "${kubeconfig}"
+export KUBECONFIG=${kubeconfig}
 
 cd "${CLUSTERLOADER_ROOT}"/ && go build -o clusterloader './cmd/'
 ./clusterloader --alsologtostderr --v="${CL2_VERBOSITY:-2}" "$@"

@@ -76,18 +76,19 @@ if [[ "${DEPLOY_GCI_DRIVER:-false}" == "true" ]]; then
 fi
 
 if [[ "${DEPLOY_AZURE_CSI_DRIVER:-false}" == "true" ]]; then
-   curl -skSL "${AZUREDISK_CSI_DRIVER_INSTALL_URL}" | bash -s "${AZUREDISK_CSI_DRIVER_VERSION}" snapshot --
+   curl -skSL ${AZUREDISK_CSI_DRIVER_INSTALL_URL} | bash -s ${AZUREDISK_CSI_DRIVER_VERSION} snapshot --
 fi
 
 # Create a dedicated service account for cluster-loader.
 cluster_loader_sa_exists=$(kubectl --kubeconfig "${KUBECONFIG}" get serviceaccount cluster-loader --ignore-not-found | wc -l)
 if [[ "$cluster_loader_sa_exists" -eq 0 ]]; then
-    kubectl --kubeconfig "${KUBECONFIG}" create serviceaccount cluster-loader
+   kubectl --kubeconfig "${KUBECONFIG}" create serviceaccount cluster-loader
 fi
 cluster_loader_crb_exists=$(kubectl --kubeconfig "${KUBECONFIG}" get clusterrolebinding cluster-loader --ignore-not-found | wc -l)
 if [[ "$cluster_loader_crb_exists" -eq 0 ]]; then
-    kubectl --kubeconfig "${KUBECONFIG}" create clusterrolebinding cluster-loader --clusterrole=cluster-admin --serviceaccount=default:cluster-loader
+   kubectl --kubeconfig "${KUBECONFIG}" create clusterrolebinding cluster-loader --clusterrole=cluster-admin --serviceaccount=default:cluster-loader
 fi
+
 
 # Create a kubeconfig to use the above service account.
 kubeconfig=$(mktemp)

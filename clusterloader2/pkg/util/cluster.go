@@ -74,7 +74,7 @@ func LogClusterNodes(c clientset.Interface) error {
 	}
 	klog.V(2).Infof("Listing cluster nodes:")
 	for i := range nodeList {
-		var internalIP, externalIP, internalDns, externalDns string
+		var internalIP, externalIP string
 		isSchedulable := IsNodeSchedulableAndUntainted(&nodeList[i])
 		for _, address := range nodeList[i].Status.Addresses {
 			if address.Type == corev1.NodeInternalIP && internalIP == "" {
@@ -83,14 +83,8 @@ func LogClusterNodes(c clientset.Interface) error {
 			if address.Type == corev1.NodeExternalIP && externalIP == "" {
 				externalIP = address.Address
 			}
-			if address.Type == corev1.NodeInternalDNS && internalDns == "" {
-				internalDns = address.Address
-			}
-			if address.Type == corev1.NodeExternalDNS && externalDns == "" {
-				externalDns = address.Address
-			}
 		}
-		klog.V(2).Infof("Name: %v, internalIP: %v, externalIP: %v, internalDNS: %v, externalDNS: %v, isSchedulable: %v", nodeList[i].ObjectMeta.Name, internalIP, externalIP, internalDns, externalDns, isSchedulable)
+		klog.V(2).Infof("Name: %v, internalIP: %v, externalIP: %v, isSchedulable: %v", nodeList[i].ObjectMeta.Name, internalIP, externalIP, isSchedulable)
 	}
 	return nil
 }

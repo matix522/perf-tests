@@ -91,7 +91,7 @@ func initClusterFlags() {
 	// TODO(#595): Change the name of the MASTER_IP and MASTER_INTERNAL_IP flags and vars to plural
 	flags.StringSliceEnvVar(&clusterLoaderConfig.ClusterConfig.MasterIPs, "masterip", "MASTER_IP", nil /*defaultValue*/, "Hostname/IP of the master node, supports multiple values when separated by commas")
 	flags.StringSliceEnvVar(&clusterLoaderConfig.ClusterConfig.MasterInternalIPs, "master-internal-ip", "MASTER_INTERNAL_IP", nil /*defaultValue*/, "Cluster internal/private IP of the master vm, supports multiple values when separated by commas")
-	flags.StringEnvVar(&clusterLoaderConfig.ClusterConfig.MasterDNSEndpoint, "master-endpoint", "MASTER_ENDPOINT", "", "Endpoint of the master node, exclusive with --masterip and --master-internal-ips")
+	flags.StringEnvVar(&clusterLoaderConfig.ClusterConfig.MasterDNSEndpoint, "master-endpoint", "MASTER_DNS_ENDPOINT", "", "Endpoint of the master node, exclusive with --masterip and --master-internal-ips")
 	flags.BoolEnvVar(&clusterLoaderConfig.ClusterConfig.APIServerPprofByClientEnabled, "apiserver-pprof-by-client-enabled", "APISERVER_PPROF_BY_CLIENT_ENABLED", true, "Whether apiserver pprof endpoint can be accessed by Kubernetes client.")
 	flags.BoolVar(&clusterLoaderConfig.ClusterConfig.SkipClusterVerification, "skip-cluster-verification", false, "Whether to skip the cluster verification, which expects at least one schedulable node in the cluster")
 
@@ -121,12 +121,6 @@ func validateClusterFlags() *errors.ErrorList {
 			errList.Append(fmt.Errorf("cannot enable prometheus server for provider %s", clusterLoaderConfig.ClusterConfig.Provider.Name()))
 		}
 	}
-	// if clusterLoaderConfig.ClusterConfig.MasterDNSEndpoint != "" {
-	// 	if clusterLoaderConfig.ClusterConfig.MasterIPs != nil || clusterLoaderConfig.ClusterConfig.MasterInternalIPs != nil {
-	// 		errList.Append(fmt.Errorf("cannot provide --master-endpoint with --masterip or --master-internal-ip"))
-	// 	}
-	// }
-
 	return errList
 }
 
@@ -175,32 +169,9 @@ func completeConfig(m *framework.MultiClientSet) error {
 		klog.V(0).Infof("ClusterConfig.Nodes set to %v", nodes)
 	}
 	if clusterLoaderConfig.ClusterConfig.MasterDNSEndpoint == "" {
-		if clusterLoaderConfig.ClusterConfig.MasterName == "" {
-			masterName, err := util.GetMasterName(m.GetClient())
-			if err == nil {
-				clusterLoaderConfig.ClusterConfig.MasterName = masterName
-				klog.V(0).Infof("ClusterConfig.MasterName set to %v", masterName)
-			} else {
-				klog.Errorf("Getting master name error: %v", err)
-			}
-		}
-		if len(clusterLoaderConfig.ClusterConfig.MasterIPs) == 0 {
-			masterIPs, err := util.GetMasterIPs(m.GetClient(), corev1.NodeExternalIP)
-			if err == nil {
-				clusterLoaderConfig.ClusterConfig.MasterIPs = masterIPs
-				klog.V(0).Infof("ClusterConfig.MasterIP set to %v", masterIPs)
-			} else {
-				klog.Errorf("Getting master external ip error: %v", err)
-			}
-		}
-		if len(clusterLoaderConfig.ClusterConfig.MasterInternalIPs) == 0 {
-			masterIPs, err := util.GetMasterIPs(m.GetClient(), corev1.NodeInternalIP)
-			if err == nil {
-				clusterLoaderConfig.ClusterConfig.MasterInternalIPs = masterIPs
-				klog.V(0).Infof("ClusterConfig.MasterInternalIP set to %v", masterIPs)
-			} else {
-				klog.Errorf("Getting master internal ip error: %v", err)
-			}
+		err := completeIpMasterConfig(m)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -209,6 +180,37 @@ func completeConfig(m *framework.MultiClientSet) error {
 	}
 	if clusterLoaderConfig.ClusterConfig.K8SClientsNumber == 0 {
 		clusterLoaderConfig.ClusterConfig.K8SClientsNumber = getClientsNumber(clusterLoaderConfig.ClusterConfig.Nodes)
+	}
+	return nil
+}
+
+func completeIpMasterConfig(m *framework.MultiClientSet) error {
+	if clusterLoaderConfig.ClusterConfig.MasterName == "" {
+		masterName, err := util.GetMasterName(m.GetClient())
+		if err == nil {
+			clusterLoaderConfig.ClusterConfig.MasterName = masterName
+			klog.V(0).Infof("ClusterConfig.MasterName set to %v", masterName)
+		} else {
+			klog.Errorf("Getting master name error: %v", err)
+		}
+	}
+	if len(clusterLoaderConfig.ClusterConfig.MasterIPs) == 0 {
+		masterIPs, err := util.GetMasterIPs(m.GetClient(), corev1.NodeExternalIP)
+		if err == nil {
+			clusterLoaderConfig.ClusterConfig.MasterIPs = masterIPs
+			klog.V(0).Infof("ClusterConfig.MasterIP set to %v", masterIPs)
+		} else {
+			klog.Errorf("Getting master external ip error: %v", err)
+		}
+	}
+	if len(clusterLoaderConfig.ClusterConfig.MasterInternalIPs) == 0 {
+		masterIPs, err := util.GetMasterIPs(m.GetClient(), corev1.NodeInternalIP)
+		if err == nil {
+			clusterLoaderConfig.ClusterConfig.MasterInternalIPs = masterIPs
+			klog.V(0).Infof("ClusterConfig.MasterInternalIP set to %v", masterIPs)
+		} else {
+			klog.Errorf("Getting master internal ip error: %v", err)
+		}
 	}
 	return nil
 }
@@ -297,13 +299,13 @@ func main() {
 		klog.Exitf("Parsing flags error: %v", errList.String())
 	}
 
-	klog.Infof("KubeConfigPath: %v", clusterLoaderConfig.ClusterConfig.KubeConfigPath)
+	klog.V(2).Infof("KubeConfigPath: %v", clusterLoaderConfig.ClusterConfig.KubeConfigPath)
 	if clusterLoaderConfig.ClusterConfig.KubeConfigPath != "" {
 		content, err := ioutil.ReadFile(clusterLoaderConfig.ClusterConfig.KubeConfigPath)
 		if err != nil {
 			klog.Errorf("Error reading kubeconfig: %v", err)
 		} else {
-			klog.Infof("KubeConfig content:\n%s", string(content))
+			klog.V(2).Infof("KubeConfig content:\n%s", string(content))
 		}
 	}
 	mclient, err := framework.NewMultiClientSet(clusterLoaderConfig.ClusterConfig.KubeConfigPath, 1)

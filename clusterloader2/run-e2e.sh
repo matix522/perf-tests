@@ -96,7 +96,7 @@ server=$(kubectl --kubeconfig "${KUBECONFIG}" config view -o jsonpath='{.cluster
 ca=$(kubectl --kubeconfig "${KUBECONFIG}" get configmap kube-root-ca.crt -o jsonpath='{.data.ca\.crt}' | base64 -w 0)
 token=$(kubectl --kubeconfig "${KUBECONFIG}" --duration=8760h create token cluster-loader)
 ca_data=""
-echo "Master endpoint $MASTER_ENDPOINT"
+
 if [[ "${MASTER_ENDPOINT:-}" == "" ]]; then
   ca_data="    certificate-authority-data: ${ca}"
 fi

@@ -97,7 +97,7 @@ ca=$(kubectl --kubeconfig "${KUBECONFIG}" get configmap kube-root-ca.crt -o json
 token=$(kubectl --kubeconfig "${KUBECONFIG}" --duration=8760h create token cluster-loader)
 ca_data=""
 
-if [[ "${MASTER_ENDPOINT:-}" == "" ]]; then
+if [[ "${MASTER_DNS_ENDPOINT:-}" == "" ]]; then
   ca_data="    certificate-authority-data: ${ca}"
 fi
 echo "

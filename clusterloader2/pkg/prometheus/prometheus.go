@@ -645,7 +645,7 @@ func getMasterIps(clusterConfig config.ClusterConfig, usePublicIPs bool) ([]stri
 	if usePublicIPs {
 		if len(clusterConfig.MasterIPs) == 0 {
 			if clusterConfig.MasterDNSEndpoint != "" {
-				return []string{clusterConfig.MasterDNSEndpoint}, nil
+				return nil, fmt.Errorf("cluster has no master IPs, but has master DNS endpoint %s", clusterConfig.MasterDNSEndpoint)
 			}
 			return nil, fmt.Errorf("requested to use public IPs, however no publics IPs are provided")
 		}
@@ -656,7 +656,7 @@ func getMasterIps(clusterConfig config.ClusterConfig, usePublicIPs bool) ([]stri
 		return clusterConfig.MasterInternalIPs, nil
 	}
 	if clusterConfig.MasterDNSEndpoint != "" {
-		return []string{clusterConfig.MasterDNSEndpoint}, nil
+		return nil, fmt.Errorf("cluster has no master IPs, but has master DNS endpoint %s", clusterConfig.MasterDNSEndpoint)
 	}
 	klog.V(1).Infof("Unable to determine master ips from flags or registered nodes. Will fallback to default/kubernetes service, which can be inaccurate in HA environments.")
 	ips, err := getMasterIpsFromKubernetesService(clusterConfig)
